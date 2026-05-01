@@ -1,0 +1,159 @@
+FPM System - Frontend Architecture: End-to-End Explanation
+1. Authentication & Role-Based Access (Requirement 11)
+Element	Detail
+Login Page	Username/password form with authentication against the backend API
+Two Roles	Investigator (sees only assigned cases) and Supervisor (sees all cases across all investigators)
+AuthContext	A React Context that stores login state, JWT token, user role, and user name — shared across the entire app
+Role Badge	Displayed in the header next to the user's name so they always know their active role
+Logout Button	Clears token, destroys session, redirects to login
+Route Guards	Protected routes redirect unauthenticated users to login; supervisor-only pages (SLA Monitor, 30-day Data Spider) are hidden from investigators
+2. Summary Dashboard (Requirement 10 — Navigation View: Summary)
+Element	Detail
+KPI Cards	6 real-time cards: Open Cases, Resolved Cases, Escalated, Auto-Rejected, SLA Breached, AI Accuracy
+Case Distribution Chart	Bar or pie chart showing breakdown by ticket type (fraud_ordering, credit_abuse, etc.) and priority
+Trend Line Chart	Cases over time (weekly/monthly) to spot volume spikes
+Recent Activity Feed	Live feed of latest events (auto-approvals, escalations, SLA breaches, dispositions)
+Quick Filter Buttons	One-click filters: All, Open, My Cases, SLA Breached, Auto-Rejected, Escalated — clicking navigates to the Cases page with that filter pre-applied
+Feedback & Accuracy Card	Shows override rate, accept rate, accuracy by risk band (low/medium/high) from Requirement 7
+3. Case Queue (Requirement 3, 4, 10 — Navigation View: Cases)
+Element	Detail
+Search Bar	Supports searching by: Case ID, UCM Ticket ID, Order ID, Customer Name, Email, Phone, Investigator, Core Account #, Mobile Account #
+Filter Bar	Dropdowns for Status, Priority, Ticket Type, Assigned Investigator, Date Range picker
+Sorting	By creation date, priority, status — ascending or descending toggle
+Case Queue Table	Columns: Case ID, UCM Ticket #, Order #, Ticket Type, Priority, Status, Disposition, SLA Status, Assigned Investigator
+Status Values	unassigned, assigned, open, in_progress, escalated, pending_customer, closed, canceled, resolved
+Ticket Types	fraud_ordering, fraud_non_ordering, credit_abuse_ordering, credit_abuse_sor, credit_abuse_appeal, general
+SLA Indicator	Color-coded: 🟢 on_track, 🟡 at_risk, 🔴 breached
+Pagination	25 cases per page with page navigation
+Export CSV	Exports all cases with fields: case_id, ucm_ticket_id, order_id, ticket_type, line_of_business, priority, status, assigned_to, disposition, customer_name, customer_email, risk_score, created_at, updated_at, sla_status, comments_count
+Field-based Filters	Special filter for disposition:pending to find cases needing action
+4. Case Detail Panel (Requirements 3, 10, 12, 13, 14)
+When a case is selected from the queue, the detail panel opens with 7 tabs:
+
+Tab 1: AI Insights
+Element	Detail
+Triage Agent Card	Shows risk score (0-100), priority assignment (critical ≥80, high ≥60, medium ≥35, low <35), confidence %, flags detected
+Verification Agent Card	Cross-reference results: phone match/mismatch, email match/mismatch, address match/mismatch, IP status, IMEI check, disputed phone, sales channel
+Summarization Agent Card	LLM-generated investigation brief with PII masked; if LLM unavailable → rule-based summary from collected data
+Decision Agent Card	Recommended disposition (approve/reject/customer_engagement/cannot_determine), confidence score, detailed reasoning; if LLM unavailable → rule-based recommendation from risk thresholds
+Tab 2: Customer Verification
+Element	Detail
+Match Results Table	Field-by-field comparison: name, address, phone, email, payment history, property status, IP address, IMEI, disputed phone, sales channel
+Confidence Scores	Each field shows match/mismatch/partial with a confidence percentage
+Tab 3: Disposition
+Element	Detail
+Disposition Dropdown	Options: approve, reject, customer_engagement, cannot_determine, fraud_found, no_fraud, waiting_for_documents, issue_with_ticket, credit_approved, credit_denied
+Comments Text Area	Required notes explaining the disposition decision
+Submit Button	Submits disposition → updates status to resolved → triggers downstream pipeline (Order Control, Mobile IT API, UCM)
+Escalate Button	Escalates case to supervisor with a reason field
+Investigation Score	Shows configurable risk factors (18 total: e.g., SSN not found: 15, deceased SSN: 20, synthetic ID: 17, mule/romance scam: 18); investigator selects applicable factors; system calculates score as % of total possible weight
+Tab 4: Redshift Chat (NLP within Case)
+Element	Detail
+Embedded NLP Query	Ask natural language questions scoped to this case's order data
+Results Panel	Read-only SQL results with PII excluded
+Tab 5: Comments & Notes
+Element	Detail
+Comment Thread	Chronological list of investigator notes, agent comments, pipeline completion notes
+Add Comment	Text input to add new notes to the case
+Tab 6: History / Audit Trail
+Element	Detail
+Status Change Log	Every transition: from_status → to_status, changed_by, changed_at, optional reason
+AI Decision Log	Records of auto-resolution, human override, gate blocks, PII masking events, NLP queries, data collection events, downstream pushes
+Export	JSON/CSV export of full audit trail per case
+Tab 7: Linked Cases
+Element	Detail
+Linked Cases List	Shows bidirectionally linked cases with their status
+Link New Case	Input another Case ID to create a bidirectional link (useful for fraud pattern tracking)
+5. SLA Monitoring (Requirement 5)
+Element	Detail
+Configurable Thresholds	Per ticket category (fraud: 144h, credit_abuse: 144h); editable by supervisor
+Breach Detection	System flags all cases inactive longer than threshold with status "breached"
+Breached Cases View	Dedicated list/notification panel showing all breached cases
+Audit Trail Entry	When breached, records event with actor "sla_monitor_system", inactivity duration, applicable threshold rule
+Surface to Supervisor	Breached cases appear prominently in supervisor's dashboard and via notifications
+Priority Tiers	Urgent: 4h, In Progress: 48h, Untouched: 144h based on case age
+6. NLP-to-SQL Query Interface (Requirement 6)
+Element	Detail
+Natural Language Input	Free-text box where investigators type questions like "Show orders from CA over $500"
+Target Selection	Toggle between Redshift (26.8M records) or local SQLite FIT database (10K records)
+Prompt Shield	Validates input for prompt injection (role impersonation, system prompt override) and SQL injection patterns (DROP, ALTER, UNION SELECT); rejects inputs >500 characters
+PII Masker	Masks customer context before sending to LLM; unmasks PII tokens in generated SQL before execution
+SQL Validation	Ensures generated SQL is a single SELECT statement with no forbidden keywords (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, TRUNCATE, GRANT, REVOKE, EXEC)
+PII Exclusion	When querying Redshift, excludes PII columns (names, addresses, SSN, DOB, credit card details) from schema context and results
+Date Filter	Auto-enforces queries to last 1 year of data
+LLM Fallback	If LLM unavailable → falls back to keyword-based SQL template matching with predefined query templates
+Quick Query Buttons	Pre-built buttons for common fraud investigation questions (work without LLM)
+Results Table	Read-only tabular results with export option
+7. Feedback Loop & AI Accuracy Tracking (Requirement 7)
+Element	Detail
+Comparison Engine	When investigator submits disposition, system compares human decision to AI recommendation → records accept or override
+Accuracy Metrics Display	Total decisions, overall AI accuracy rate, override rate, accuracy by disposition type, accuracy by risk band (low 0-30, medium 31-60, high 61-100), common override patterns
+Threshold Alerts	Generates adjustment recommendations when override rate exceeds 30%, or specific disposition type accuracy falls below 70%, or any risk band accuracy falls below 60%
+API Endpoint	Feedback metrics and threshold recommendations exposed via API for external dashboards
+8. Data Spider (Requirement 10 — Navigation View: Data Spider)
+Element	Detail
+Purpose	Query Redshift for order-level details across the investigator's case queue
+Investigator Mode	Shows orders only from their assigned cases
+Supervisor Mode	Shows last 30 days of ALL orders across all investigators
+Table Columns	Order ID, Case ID, Customer, Channel, Amount, Items, Shipping Address, Status, Created Date, Risk Flags
+Pagination & Filtering	Filter by Case ID, Order ID, Date Range, Customer, Channel
+9. Fraud Map & Fraud Ring Detection (Requirement 9)
+Element	Detail
+US Choropleth Heatmap	States colored by fraud impact intensity; aggregated from ZIP-code-level Redshift data
+State Tooltips	On hover: fraud impact count, confirmed fraud count, ZIP code count, top ZIP codes
+State Ranking Panel	Sortable table by fraud impact or confirmed fraud count
+Fraud Ring Mode Toggle	Switches from heatmap to ring visualization
+Ring Detection Algorithm	Union-Find algorithm on shared PII attributes; assigns each connected component a unique ring ID
+Ring Network Graph	Nodes = sized circles at ZIP code locations (size = order count); Edges = colored lines by link type (🔵 City, 🔴 Email, 🟢 Phone, 🟠 Address)
+PII Masking in Graph	Only shows link type and truncated identifiers for non-city link types
+Top 20 Default	When no specific ring selected, displays top 20 multi-node rings to avoid rendering overload
+Ring Detail Panel	Ring ID, node count, edge count, shared attributes, ZIPs involved, cities
+10. External Investigation Tools (Requirement 12)
+Element	Detail
+Configurable Tool List	Each tool has: name, URI, description, icon
+Tools Include	GIS, LexisNexis, Ekata, ID Theft Tracker, Scope, SentiLink, Idicore, Catfish, FedEx/UPS, OpenCorporates, ShareFile, Call Records
+Display	Clickable links that open in new browser tabs
+API Exposure	External tool links available via API endpoint for integration
+11. Customer History (Requirement 13)
+Element	Detail
+Lookup	Search by customer identifier (name, email, phone, account number) across entire case store
+Summary Metrics	Total tickets, open tickets, last case date, high-risk flag (any case with risk score ≥ 70)
+View All Cases	Link to filtered case queue showing all cases for that customer
+12. Downstream Integration Pipeline (Requirement 15)
+Element	Detail
+Trigger	When disposition is finalized (submitted by investigator)
+Targets	Push disposition to Order Control (Redshift), Mobile IT API, and UCM in parallel
+Status Mapping	approve → approved, reject → rejected, customer_engagement → pending_customer_contact, cannot_determine → escalated
+Completion Comment	Orchestrator Agent adds a pipeline completion comment to the case noting which downstream systems were updated
+Frontend Visibility	Investigator sees a "Pipeline Status" indicator showing which downstream systems have been updated
+13. React Component Architecture
+14. State Management
+Context	Purpose
+AuthContext	Manages login/logout, JWT token storage, user role, protected route logic
+CasesContext	Case queue state, selected case, filters, sort order, pagination
+NotificationContext	SLA alerts, real-time case updates, pipeline status notifications
+WebSocketContext	Real-time push updates for case status changes, new assignments, SLA breaches
+15. API Endpoints (Frontend consumes)
+Endpoint	Purpose
+POST /api/auth/login	Authenticate user
+GET /api/cases	List cases with filters/sort/pagination
+GET /api/cases/:id	Single case detail with all agent insights
+GET /api/cases/search	Search across all fields
+POST /api/cases/:id/disposition	Submit disposition
+POST /api/cases/:id/escalate	Escalate to supervisor
+POST /api/cases/:id/comments	Add comment
+GET /api/cases/:id/linked	Get linked cases
+POST /api/cases/link	Create bidirectional link
+GET /api/cases/export	Export CSV
+GET /api/audit-trail/:caseId	Audit trail per case
+GET /api/investigation-score/:caseId	Risk factors & score
+POST /api/investigation-score/:caseId	Submit selected risk factors
+GET /api/external-tools	List external tool links
+GET /api/customer-history	Customer lookup
+POST /api/nlp-query	NLP-to-SQL query
+GET /api/fraud-map	Heatmap data
+GET /api/fraud-rings	Ring detection data
+GET /api/sla-rules	SLA thresholds
+GET /api/feedback	Accuracy metrics
+This covers every requirement (1–17) from your document as it relates to what the frontend must display, interact with, and support.
+

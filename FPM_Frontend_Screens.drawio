@@ -1,0 +1,190 @@
+<mxfile host="app.diagrams.net" modified="2026-05-01T10:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram id="frontend-screens" name="Frontend Screens">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="FPM Platform - Frontend Screen Map" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;fontColor=#1A237E;" vertex="1" parent="1">
+          <mxGeometry x="500" y="20" width="400" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- LOGIN PAGE -->
+        <mxCell id="login" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="80" width="220" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="login-title" value="Login Page" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;fontSize=14;fontStyle=1;fontColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="85" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="login-items" value="• Spectrum Branding&#xa;• Role Selection (Investigator/Supervisor)&#xa;• Username &amp; Password Form&#xa;• Two-step Sign-in Flow&#xa;• Role Icons (Search/Shield)" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="610" y="115" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow from Login to Dashboard -->
+        <mxCell id="arrow-login-dash" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565C0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="login" target="header">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-login-label" value="Auth Success" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontColor=#616161;" vertex="1" connectable="0" parent="arrow-login-dash">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- HEADER (shared across all pages) -->
+        <mxCell id="header" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;strokeWidth=2;arcSize=5;" vertex="1" parent="1">
+          <mxGeometry x="200" y="290" width="1000" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="header-title" value="Header Component (All Pages)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="550" y="295" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="header-items" value="Nav Links: Summary | Cases | Data Spider | Fraud Map | NLP Query | SLA Monitor* | Audit Log*  |  AI Degradation Indicator  |  Health Toggle*  |  Theme Toggle (Dark/Light)  |  User Name + Role Badge  |  Logout&#xa;(* = Supervisor only)" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="220" y="320" width="960" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- DASHBOARD PAGE -->
+        <mxCell id="dashboard" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="420" width="280" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="dash-title" value="Dashboard / Summary Page" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#2E7D32;" vertex="1" parent="1">
+          <mxGeometry x="70" y="425" width="220" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="dash-items" value="• KPI Cards (Open, Resolved, Escalated,&#xa;  Auto-Rejected) — clickable → Cases view&#xa;• Case Distribution Bar Chart&#xa;• Priority Pie Chart&#xa;• Trend Line Chart (30 days)&#xa;• Recent Activity Feed&#xa;• AI Feedback Metrics Panel*&#xa;  - Total decisions, accuracy rate&#xa;  - Override rate, by risk band&#xa;  - Threshold adjustment recommendations&#xa;&#xa;(* Supervisor only)" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="50" y="455" width="260" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- CASES PAGE -->
+        <mxCell id="cases" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="340" y="420" width="300" height="540" as="geometry" />
+        </mxCell>
+        <mxCell id="cases-title" value="Cases Page" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="430" y="425" width="120" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="cases-items" value="CASE QUEUE:&#xa;• Quick Filters (All, Open, My Open,&#xa;  Auto-Rejected, Pending)&#xa;• Search by: case ID, UCM ID, order ID,&#xa;  customer name/email/phone, account #&#xa;• Filter by: status, priority, type,&#xa;  investigator, date range&#xa;• Sort by: created_at, priority, status&#xa;• Create Case button + modal&#xa;• Export CSV button&#xa;&#xa;CASE DETAIL (multi-tab):&#xa;─────────────────────────&#xa;Tab 1: 🤖 AI Insights&#xa;  • Triage Agent (risk, priority, confidence)&#xa;  • Verification Agent (match/mismatch)&#xa;  • Summarization Agent (brief)&#xa;  • Decision Agent (recommendation)&#xa;  • Confidence Gate indicator&#xa;  • Investigation Score + Risk Factors&#xa;  • AI Degradation Banner&#xa;&#xa;Tab 2: ✓ Verification&#xa;  • Field-by-field match table&#xa;  • Overall confidence score&#xa;&#xa;Tab 3: ⚖️ Disposition&#xa;  • Disposition dropdown&#xa;  • Comments textarea&#xa;  • Submit / Escalate buttons&#xa;  • Reassign (supervisor)&#xa;  • Pipeline Status after submit&#xa;&#xa;Tab 4: 💬 Redshift Chat&#xa;  • NLP query scoped to case&#xa;  • Quick query buttons&#xa;  • Generated SQL + results table&#xa;&#xa;Tab 5: 👤 Customer History&#xa;  • Summary metrics&#xa;  • All cases for customer&#xa;&#xa;Tab 6: 💭 Comments&#xa;  • Comments list + add new&#xa;&#xa;Tab 7: 📜 History&#xa;  • Status change timeline&#xa;  • Audit trail (per-case)&#xa;  • Export JSON/CSV&#xa;&#xa;Tab 8: 🔗 Linked&#xa;  • Linked cases list&#xa;  • Create new link&#xa;&#xa;Tab 9: 🔧 Tools&#xa;  • 12 External tool links" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=8;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="350" y="450" width="280" height="500" as="geometry" />
+        </mxCell>
+
+        <!-- DATA SPIDER PAGE -->
+        <mxCell id="dataspider" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="660" y="420" width="220" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="ds-title" value="Data Spider Page" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#7B1FA2;" vertex="1" parent="1">
+          <mxGeometry x="710" y="425" width="130" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="ds-items" value="• Order aggregation table&#xa;• Filters (order ID, status, date)&#xa;• Pagination&#xa;• Investigator mode (own case orders)&#xa;• Supervisor mode (last 30 days all)&#xa;• Column sorting&#xa;• Order detail expand" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="670" y="455" width="200" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- FRAUD MAP PAGE -->
+        <mxCell id="fraudmap" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="660" y="620" width="220" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="fm-title" value="Fraud Map Page" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#C62828;" vertex="1" parent="1">
+          <mxGeometry x="710" y="625" width="120" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="fm-items" value="VIEW 1: Heatmap&#xa;• US state grid (choropleth)&#xa;• Color by fraud impact intensity&#xa;• State tooltips (impact, confirmed,&#xa;  ZIP count, top ZIPs)&#xa;• State ranking panel (sortable)&#xa;• State detail on click&#xa;&#xa;VIEW 2: Fraud Rings&#xa;• Ring cards (top 20)&#xa;• Network graph (nodes + edges)&#xa;• Color-coded links (city/email/&#xa;  phone/address)&#xa;• PII masking on display&#xa;• Legend" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="670" y="655" width="200" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- NLP QUERY PAGE -->
+        <mxCell id="nlpquery" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="420" width="220" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="nlp-title" value="NLP Query Page" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#00695C;" vertex="1" parent="1">
+          <mxGeometry x="950" y="425" width="120" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="nlp-items" value="• NLP text input&#xa;• Target selector (Redshift / SQLite)&#xa;• Prompt Shield validation indicator&#xa;• Quick Query template buttons&#xa;• Generated SQL display&#xa;• Results table&#xa;• Export results&#xa;• Date filter enforcement (1 year)&#xa;• LLM fallback mode indicator&#xa;• 500 char limit enforcement" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="910" y="455" width="200" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- SLA MONITOR PAGE -->
+        <mxCell id="sla" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="640" width="220" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="sla-title" value="SLA Monitor Page *" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="940" y="645" width="140" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="sla-items" value="• SLA thresholds table&#xa;  (fraud: 144h, credit_abuse: 144h)&#xa;• Priority tiers display&#xa;  (urgent:4h, in_progress:48h,&#xa;   untouched:144h)&#xa;• Breached cases list&#xa;• At-risk cases list&#xa;• Case age indicators&#xa;&#xa;(* Supervisor only)" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="910" y="675" width="200" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- AUDIT LOG PAGE -->
+        <mxCell id="auditlog" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFEBE9;strokeColor=#4E342E;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="840" width="220" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="al-title" value="Audit Log Page *" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontStyle=1;fontColor=#4E342E;" vertex="1" parent="1">
+          <mxGeometry x="950" y="845" width="120" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="al-items" value="• Filter by: case ID, action type,&#xa;  date range&#xa;• Full audit trail table&#xa;• Export JSON button&#xa;• Export CSV button&#xa;• Action types: case_created,&#xa;  ai_decision, sla_breach,&#xa;  confidence_gate_block, pipeline_push,&#xa;  status_change, nlp_query, etc.&#xa;&#xa;(* Supervisor only)" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="910" y="875" width="200" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- CREATE CASE MODAL -->
+        <mxCell id="modal" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#9E9E9E;strokeWidth=2;dashed=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="720" width="220" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="modal-title" value="Create Case Modal" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1;fontColor=#616161;" vertex="1" parent="1">
+          <mxGeometry x="80" y="725" width="140" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="modal-items" value="• Ticket Type dropdown&#xa;• Priority selector&#xa;• UCM ID input&#xa;• Order ID input&#xa;• Line of Business&#xa;• Assignee (optional)&#xa;• Customer Name, Email, Phone&#xa;• Description textarea" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="50" y="755" width="200" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Navigation arrows from Header -->
+        <mxCell id="nav1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2E7D32;strokeWidth=1.5;" edge="1" parent="1" source="header" target="dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nav2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="header" target="cases">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nav3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#7B1FA2;strokeWidth=1.5;" edge="1" parent="1" source="header" target="dataspider">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nav4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#C62828;strokeWidth=1.5;" edge="1" parent="1" source="header" target="fraudmap">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nav5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#00695C;strokeWidth=1.5;" edge="1" parent="1" source="header" target="nlpquery">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nav6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#E65100;strokeWidth=1.5;" edge="1" parent="1" source="header" target="sla">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nav7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4E342E;strokeWidth=1.5;" edge="1" parent="1" source="header" target="auditlog">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- KPI click arrow -->
+        <mxCell id="kpi-click" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565C0;strokeWidth=1;dashed=1;" edge="1" parent="1" source="dashboard" target="cases">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kpi-label" value="KPI click → filter" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#616161;" vertex="1" connectable="0" parent="kpi-click">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Modal arrow -->
+        <mxCell id="modal-arrow" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9E9E9E;strokeWidth=1;dashed=1;" edge="1" parent="1" source="cases" target="modal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="modal-label" value="Create Case btn" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#616161;" vertex="1" connectable="0" parent="modal-arrow">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- LEGEND -->
+        <mxCell id="legend" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#BDBDBD;strokeWidth=1;arcSize=5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="920" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-title" value="Legend" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontStyle=1;fontColor=#424242;" vertex="1" parent="1">
+          <mxGeometry x="50" y="925" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-items" value="● Solid arrow = Navigation route&#xa;● Dashed arrow = Action trigger&#xa;● * = Supervisor-only access&#xa;● Color coding matches route theme" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];fontSize=9;fontColor=#616161;" vertex="1" parent="1">
+          <mxGeometry x="50" y="945" width="240" height="70" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

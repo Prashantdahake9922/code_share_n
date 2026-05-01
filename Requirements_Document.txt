@@ -1,0 +1,264 @@
+# Requirements Document
+
+## Introduction
+
+The Fraud Prevention & Case Management (FPM) Platform is an AI-powered, end-to-end fraud investigation system that replaces manual, fragmented investigator workflows with an intelligent automated pipeline. The system ingests fraud tickets from UCM/FIT systems, runs them through a multi-agent AI pipeline (data collection, triage, verification, summarization, decision), enforces guardrails (PII masking, confidence gates, prompt shields, audit trails), and presents results in a React dashboard for human-in-the-loop review and disposition. The platform integrates with Amazon Redshift for analytics, supports NLP-to-SQL querying, geographic fraud visualization, fraud ring detection, and deploys on AWS via CloudFormation (Lambda + API Gateway + CloudFront + S3).
+
+## Glossary
+
+- **FPM_System**: The Fraud Prevention & Case Management Platform as a whole, encompassing backend API, AI agent pipeline, frontend dashboard, and AWS infrastructure
+- **Orchestrator_Agent**: The central event-driven coordinator that sequences all AI agents through the investigation pipeline with guardrails at every stage
+- **Triage_Agent**: The agent responsible for computing risk scores (0-100), auto-resolving clear-cut cases, and routing ambiguous cases to investigators
+- **Data_Collection_Agent**: The agent that gathers data from 15+ external and internal sources in parallel via MCP servers
+- **Redshift_Collection_Agent**: The agent that queries the Amazon Redshift data warehouse for historical order and fraud pattern data
+- **Verification_Agent**: The agent that cross-references customer identity fields across collected data sources
+- **Summarization_Agent**: The LLM-powered agent that generates concise investigation briefs from collected data
+- **Decision_Agent**: The LLM-powered agent that recommends a disposition with confidence score and reasoning
+- **NLP_to_SQL_Agent**: The agent that converts investigator natural language questions into SQL queries against Redshift or SQLite
+- **Confidence_Gate**: A guardrail that blocks auto-decisions when AI confidence falls below a configurable threshold (default 85%)
+- **PII_Masker**: A guardrail that masks personally identifiable information before sending data to external LLM providers
+- **Prompt_Shield**: A guardrail that detects and blocks prompt injection and GoI injection attempts in user inputs
+- **Audit_Trail**: A guardrail that records every AI decision, human override, and system action for compliance
+- **MCP_Server**: A Model Context Protocol server that provides a uniform abstraction layer between agents and data sources, with caching and error handling
+- **AWS_AgentCore**: The AWS managed hosting platform for deploying, registering, and managing MCP servers, providing centralized server lifecycle management and discovery
+- **Feedback_Tracker**: The system that records investigator accept/override patterns to track AI accuracy and recommend threshold adjustments
+- **Case_Queue**: The frontend component displaying the filtered, sortable list of fraud cases assigned to an investigator
+- **Dashboard**: The main frontend page containing summary KPIs, case queue, data spider, and fraud map views
+- **Disposition**: The final determination on a fraud case (approve, reject, customer_engagement, fraud_found, no_fraud, etc.)
+- **SLA**: Service Level Agreement tracking with deadline, status (on_track, at_risk, breached), and tier-based hour limits
+- **Fraud_Map**: The geographic visualization component showing US fraud heatmap by state and fraud ring network detection
+- **Data_Spider**: The multi-order data aggregation view that queries Redshift for order-level details across an investigator's case queue
+- **UCM**: Unified Case Management - the upstream ticketing system that provides fraud investigation tickets
+- **UCM_Poller**: The scheduled background process that polls UCM at a configurable interval to fetch new and updated fraud investigation tickets into the FPM_System
+- **FIT**: Fraud Investigation Tickets – the ticket data schema with fields like IP, IMEI, disputed phone, sales channel, order details
+
+## Requirements
+
+### Requirement 1: Multi-Agent Investigation Pipeline
+
+**User Story:** As a fraud investigator, I want incoming fraud tickets to be automatically processed through an AI pipeline, so that I receive pre-analyzed cases with risk scores, verification results, summaries, and disposition recommendations.
+
+#### Acceptance Criteria
+
+1. THE UCM_Poller SHALL poll UCM for new and updated fraud tickets on a configurable schedule with a default interval of 5 minutes
+2. WHEN the UCM_Poller executes a poll cycle, THE UCM_Poller SHALL fetch all tickets flagged for fraud review that have been created or updated since the last successful poll
+3. THE UCM_Poller SHALL deduplicate fetched tickets against already-ingested cases using the UCM ticket ID, skipping tickets that have already been processed
+4. WHEN the UCM_Poller ingests a new ticket, THE Orchestrator_Agent SHALL execute the pipeline in sequence: Data Collection → Triage → Verification + Summarization (parallel) → Decision
+5. If the UCM_Poller fails to connect to UCM during a poll cycle, THEN the UCM_Poller SHALL log the failure and retry on the next scheduled interval without blocking subsequent poll cycles
+6. THE Data_Collection_Agent SHALL gather data from 15 or more external and internal sources in parallel via MCP_Server instances, completing within 10 seconds
+7. THE Redshift_Collection_Agent SHALL query the Redshift data warehouse for historical order patterns using predefined query templates (order_summary, fraud_status_breakdown, orders_by_state, orders_by_channel, high_value_orders, recent_orders, customer_orders, device_activity)
+8. THE Triage_Agent SHALL compute a risk score between 0 and 100 from 20 or more risk signals including order value, device count, ticket type, account age, address match, phone match, email_validity, velocity, watchlist status, prior fraud history, IP proxy detection, and credit score
+9. THE Triage_Agent SHALL assign case priority as critical (score >= 80), high (score >= 60), medium (score >= 35), or low (score < 35)
+10. When the risk score is at or below the auto-approve ceiling (default 15), THE Triage_Agent SHALL auto-approve the case
+11. When the risk score is at or above the auto-reject floor (default 90), THE Triage_Agent SHALL auto-reject the case
+12. When the risk score is between the auto-approve ceiling and auto-reject floor, THE Triage_Agent SHALL route the case to an investigator based on line-of-business routing rules
+13. THE Verification_Agent SHALL cross-reference customer name, address, phone, email, payment history, property status, IP address, IMEI, disputed phone, and sales channel across collected data sources, producing match/mismatch results with confidence scores
+14. THE Summarization_Agent SHALL generate a concise investigation brief using the LLM with PII-masked input
+15. If the LLM is unavailable, THEN the Summarization_Agent SHALL produce a rule-based summary from collected data
+16. THE Decision_Agent SHALL recommend a disposition (approve, reject, customer_engagement, cannot_determine) with a confidence score and detailed reasoning using the LLM
+17. If the LLM is unavailable, THEN THE Decision_Agent SHALL produce a rule-based disposition recommendation
+
+### Requirement 2: Guardrails Framework
+
+**User Story:** As a compliance officer, I want every AI decision to be protected by security guardrails, so that PII is never exposed to external services, auto-decisions meet confidence thresholds, prompt injections are blocked, and all actions are auditable.
+
+#### Acceptance Criteria
+
+1. THE PII_Masker SHALL mask SSN, credit card numbers, email addresses, phone numbers, names, and addresses using regex pattern detection before sending data to external LLM providers
+2. THE PII_Masker SHALL maintain a bidirectional mapping between original and masked values within a single request context, enabling unmasking when returning results to the application layer
+3. THE Confidence_Gate SHALL block auto-approve decisions when AI confidence is below the configurable threshold (default 85%) or when the risk score exceeds the auto-approve ceiling
+4. THE Confidence_Gate SHALL block auto-reject decisions when AI confidence is below the configurable threshold (default 85%) or when the risk score is below the auto-reject floor
+5. When the Confidence_Gate blocks an auto-decision, THE Orchestrator_Agent SHALL route the case to human review instead
+6. THE Prompt_Shield SHALL validate all NLP user inputs against prompt injection patterns (ignore instructions, role impersonation, system prompt override) and SQL injection patterns (DROP, ALTER, UNION SELECT, comment injection)
+7. THE Prompt_Shield SHALL reject inputs exceeding 500 characters
+8. THE Prompt_Shield SHALL validate LLM-generated SQL to ensure it contains only SELECT statements, no multiple statements, and no forbidden keywords (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, TRUNCATE, GRANT, REVOKE, EXEC)
+9. THE Audit_Trail SHALL record every AI decision, auto-resolution, human disposition, human override, gate block, PII masking event, prompt block, NLP query, data collection event, and downstream push with timestamp, case ID, actor, and details
+10. THE FPM_System SHALL expose audit trail data via API endpoints for per-case retrieval and full log export in JSON and CSV formats
+
+### Requirement 3: Case Management
+
+**User Story:** As a fraud investigator, I want to manage fraud cases through their full lifecycle, so that I can track, investigate, disposition, and close cases efficiently.
+
+#### Acceptance Criteria
+
+1. THE FPM_System SHALL support the full ticket lifecycle with statuses: unassigned, assigned, open, in_progress, escalated, pending_customer, closed, canceled, and resolved
+2. THE FPM_System SHALL support configurable ticket types: fraud_ordering, fraud_non_ordering, credit_abuse_ordering, credit_abuse_sor, credit_abuse_appeal, and general
+3. THE FPM_System SHALL support fraud-specific dispositions: approve, reject, customer_engagement, cannot_determine, fraud_found, no_fraud, waiting_for_documents, issue_with_ticket, credit_approved, and credit_denied
+4. When an investigator submits a disposition, THE FPM_System SHALL update the case status to resolved and trigger downstream pipeline updates to Order Control, Mobile IT API, and UCM
+5. THE FPM_System SHALL track status change history with from_status, to_status, changed_by, changed_at, and optional reason for each transition
+6. THE FPM_System SHALL allow investigators to add text comments and notes to cases
+7. THE FPM_System SHALL allow investigators to escalate cases to supervisors with a reason, updating the case status to escalated
+8. THE FPM_System SHALL allow supervisors to reassign cases to different investigators
+9. When a case is created manually, THE FPM_System SHALL accept ticket type, order ID, line of business, priority, customer information, description, and optional assignee
+10. THE FPM_System SHALL compute SLA status (on_track, at_risk, breached) based on priority tier (urgent: 4 hours, in_progress: 48 hours, untouched: 144 hours) and case age
+
+### Requirement 4: Case Search, Filter, and Export
+
+**User Story:** As a fraud investigator, I want to search, filter, sort, and export cases, so that I can quickly find relevant cases and generate reports.
+
+#### Acceptance Criteria
+
+1. THE FPM_System SHALL support searching cases by case ID, UCM ticket ID, order ID, customer name, customer email, customer phone, assigned investigator, core account number, and mobile account number
+2. THE FPM_System SHALL support filtering cases by status, priority, ticket type, assigned investigator, and date range
+3. THE FPM_System SHALL support sorting cases by creation date, priority, and status in ascending or descending order
+4. THE FPM_System SHALL export all cases to CSV format with fields: case_id, ucm_ticket_id, order_id, ticket_type, line_of_business, priority, status, assigned_to, disposition, customer_name, customer_email, risk_score, created_at, updated_at, sla_status, and comments_count
+5. THE FPM_System SHALL support exporting audit logs to JSON and CSV formats with optional filters by case ID, action type, and date range
+
+### Requirement 5: Inactivity SLA Monitoring
+
+**User Story:** As a fraud operations manager, I want cases that exceed inactivity thresholds to be flagged as SLA breached, so that supervisors can identify and act on stale cases before they become compliance risks.
+
+#### Acceptance Criteria
+
+1. THE FPM_System SHALL maintain configurable inactivity thresholds per ticket category (fraud: 144 hours inactivity, credit_abuse: 144 hours inactivity)
+2. WHEN the SLA monitoring process runs, THE FPM_System SHALL flag all open cases that have been inactive for longer than the configured inactivity threshold with SLA status "breached"
+3. When a case is flagged as SLA breached, THE Audit_Trail SHALL record the breach event with actor "sla_monitor_system", the inactivity duration, and the applicable threshold rule
+4. When a case is flagged as SLA breached, THE FPM_System SHALL surface the breached case to supervisors via a dedicated breached-cases notification or view
+5. THE FPM_System SHALL expose the current SLA breach rules (inactivity thresholds per ticket category) via an API endpoint
+
+### Requirement 6: NLP-to-SQL Query Interface
+
+**User Story:** As a fraud investigator, I want to ask natural language questions about order data and receive SQL query results, so that I can perform ad-hoc analysis without writing SQL.
+
+#### Acceptance Criteria
+
+1. THE NLP_to_SQL_Agent SHALL convert natural language questions into read-only SELECT SQL queries against either the Redshift data warehouse (26.8M records) or the local SQLite FIT database (10K records) based on configuration
+2. THE NLP_to_SQL_Agent SHALL apply Prompt_Shield validation on user input before LLM processing
+3. THE NLP_to_SQL_Agent SHALL apply PII_Masker on customer context before sending to the LLM and unmask PII tokens in the generated SQL before execution
+4. THE NLP_to_SQL_Agent SHALL validate generated SQL to ensure it is a single SELECT statement with no forbidden keywords
+5. WHEN querying Redshift, THE NLP_to_SQL_Agent SHALL exclude PII columns (names, addresses, SSN, DOB, credit card details) from both the schema context sent to the LLM and from query results
+6. WHEN querying Redshift, THE NLP_to_SQL_Agent SHALL enforce a date filter limiting queries to the last 1 year of data
+7. If the LLM is unavailable, THEN THE NLP_to_SQL_Agent SHALL fall back to keyword-based SQL template matching with predefined query templates for common fraud investigation questions
+8. THE FPM_System SHALL provide pre-built quick query buttons for common investigation queries that work without LLM connectivity
+
+### Requirement 7: Feedback Loop and AI Accuracy Tracking
+
+**User Story:** As a fraud operations manager, I want to track how often investigators accept or override AI recommendations, so that I can measure AI accuracy and tune decision thresholds.
+
+#### Acceptance Criteria
+
+1. WHEN an investigator submits a disposition, THE Feedback_Tracker SHALL compare the human decision to the AI recommendation and record whether it was an acceptance or override
+2. THE Feedback_Tracker SHALL maintain accuracy metrics: total decisions, overall AI accuracy rate, override rate, accuracy by disposition type, accuracy by risk band (low 0-30, medium 31-60, high 61-100), and common override patterns
+3. THE Feedback_Tracker SHALL generate threshold adjustment recommendations when the override rate exceeds 30%, when accuracy for a specific disposition type falls below 70%, or when accuracy in a risk band falls below 60%
+4. THE FPM_System SHALL expose feedback metrics and threshold recommendations via API endpoints
+
+### Requirement 8: Model Context Protocol (MCP) Abstraction Layer
+
+**User Story:** As a platform developer, I want all data source interactions abstracted through MCP servers hosted on AWS AgentCore, so that agents are decoupled from data source specifics and benefit from uniform caching, error handling, managed hosting, and auditability.
+
+#### Acceptance Criteria
+
+1. THE MCP_Server base class SHALL provide a uniform interface with standardized MCPRequest and MCPResponse data structures, caching with configurable TTL, and error handling
+2. THE FPM_System SHALL deploy the API Integration MCP server on AWS AgentCore with tools for querying individual sources (query_source) and all sources in parallel (query_all), with 60-second cache TTL
+3. THE FPM_System SHALL deploy the Redshift MCP server on AWS AgentCore with tools for structured queries (structured_query using predefined templates) and NLP queries (nlp_query), with 120-second cache TTL and PII column stripping
+4. THE FPM_System SHALL register all MCP_Server instances on AWS AgentCore, enabling centralized lifecycle management, versioning, and health monitoring
+5. THE FPM_System SHALL maintain an MCP registry that discovers and routes to MCP servers hosted on AWS AgentCore, allowing agents to call tools via call_tool(server_name, tool_name, parameters)
+6. THE FPM_System SHALL expose the list of registered MCP servers hosted on AWS AgentCore and their tools via an API endpoint
+7. If an MCP_Server hosted on AWS AgentCore becomes unreachable, THEN the MCP registry SHALL report the server health status and prevent routing requests to the unavailable server
+
+### Requirement 9: Fraud Map and Fraud Ring Detection
+
+**User Story:** As a fraud analyst, I want to visualize geographic fraud patterns and detect fraud rings across ZIP codes, so that I can identify organized fraud clusters and regional hotspots.
+
+#### Acceptance Criteria
+
+1. THE Fraud_Map SHALL display a US choropleth heatmap colored by fraud impact intensity per state, aggregated from ZIP-code-level Redshift data
+2. THE Fraud_Map SHALL show state-level tooltips with fraud impact count, confirmed fraud count, ZIP code count, and top ZIP codes on hover
+3. THE Fraud_Map SHALL provide a state ranking panel sortable by fraud impact or confirmed fraud count
+4. When the fraud rings mode is selected, THE FPM_System SHALL query Redshift for fraud order clusters linked by shared city, email, phone, and address attributes across ZIP codes
+5. THE FPM_System SHALL detect distinct fraud ring clusters using a union-find algorithm on shared PII attributes, assigning each connected component a unique ring ID
+6. THE Fraud_Map SHALL render fraud ring nodes as sized circles at ZIP code locations and edges as colored lines between connected ZIPs, with colors distinguishing link types (city: blue, email: red, phone: green, address: orange)
+7. THE Fraud_Map SHALL mask PII values in ring link data, displaying only link type and truncated identifiers for non-city link types
+8. WHEN no specific ring is selected, THE Fraud_Map SHALL display the top 20 multi-node rings to avoid rendering overload
+
+### Requirement 10: Frontend Dashboard and Case Investigation Interface
+
+**User Story:** As a fraud investigator, I want a comprehensive dashboard with case queue, case detail, AI insights, and investigation tools, so that I can efficiently review and disposition fraud cases.
+
+#### Acceptance Criteria
+
+1. THE Dashboard SHALL provide four navigation views: Summary (KPI cards and case distribution), Cases (case queue and detail), Data Spider, and Fraud Map
+2. THE Dashboard SHALL display KPI summary cards showing open cases, resolved cases, escalated cases, and auto-rejected cases, with clickable filters that navigate to the cases view
+3. THE Case_Queue SHALL display cases with filtering by all, open, my open, auto-rejected, and field-based filters (e.g., disposition:pending), and support case selection
+4. THE FPM_System SHALL render a case detail view with multi-tab investigation interface including AI Insights, Customer Verification, Disposition Panel, Redshift chat, and agent comments
+5. THE FPM_System SHALL display agent insights showing each agent's summary, risk score, flags, recommendation, and reasoning
+6. THE FPM_System SHALL display customer verification results showing field-by-field match/mismatch status with confidence scores
+7. THE FPM_System SHALL provide a disposition panel for investigators to submit case dispositions with comments
+8. THE Data_Spider SHALL query Redshift for order-level details across order IDs from the investigator's case queue, with pagination, filtering, and supervisor mode (last 30 days of all orders)
+
+### Requirement 11: Authentication and Role-Based Access
+
+**User Story:** As a system administrator, I want role-based access control separating investigators from supervisors, so that each role sees appropriate data and has appropriate permissions.
+
+#### Acceptance Criteria
+
+1. THE FPM_System SHALL require user authentication before accessing the dashboard
+2. THE FPM_System SHALL support two roles: investigator and supervisor
+3. WHILE a user is authenticated as an investigator, THE Dashboard SHALL display only cases assigned to that investigator
+4. WHILE a user is authenticated as a supervisor, THE Dashboard SHALL display all cases across all investigators
+5. THE FPM_System SHALL display the user's name, role badge, and a logout button in the application header
+6. THE FPM_System SHALL provide an authentication context that manages login state and user information across the application
+
+### Requirement 12: Investigation Scoring and External Tools
+
+**User Story:** As a fraud investigator, I want to score cases using configurable risk factors and access external investigation tools, so that I can systematically evaluate fraud indicators and cross-reference with external systems.
+
+#### Acceptance Criteria
+
+1. THE FPM_System SHALL maintain a configurable list of 18 risk factors with IDs, labels, and weights (e.g., SSN not found: 15, deceased SSN: 20, synthetic ID: 17, mule/romance scam: 18)
+2. WHEN an investigator submits selected risk factors for a case, THE FPM_System SHALL calculate an investigation score as a percentage of total possible weight
+3. THE FPM_System SHALL store investigation scores per case with selected factors, investigator, notes, and timestamp
+4. THE FPM_System SHALL maintain a configurable list of external investigation tool links (GIS, LexisNexis, Ekata, ID Theft Tracker, Scope, SentiLink, Indicore, Catfish, FedEx/UPS, OpenCorporates, ShareFile, Call Records) with name, URI, description, and icon
+5. THE FPM_System SHALL expose external tool links via an API endpoint
+
+### Requirement 13: Customer History
+
+**User Story:** As a fraud investigator, I want to look up all cases associated with a customer, so that I can identify repeat offenders and patterns across multiple tickets.
+
+#### Acceptance Criteria
+
+1. WHEN a customer identifier (name, email, phone, or account number) is provided, THE FPM_System SHALL return all matching cases across the case store
+2. THE FPM_System SHALL provide customer history summary metrics: total tickets, open tickets, last case date, and high-risk flag (any case with risk score >= 70)
+
+### Requirement 14: Linked Tickets
+
+**User Story:** As a fraud investigator, I want to link related fraud tickets together, so that I can track connections between cases involving the same fraud pattern.
+
+#### Acceptance Criteria
+
+1. WHEN two case IDs are provided, THE FPM_System SHALL create a bidirectional link between the cases
+2. THE FPM_System SHALL return all linked cases for a given case ID via an API endpoint
+
+### Requirement 15: Downstream Integration Pipeline
+
+**User Story:** As a fraud operations manager, I want case dispositions to automatically propagate to downstream systems, so that order control, mobile fulfillment, and ticket management systems are updated in real-time.
+
+#### Acceptance Criteria
+
+1. WHEN a case disposition is finalized, THE Orchestrator_Agent SHALL push the disposition to Order Control (Redshift), Mobile IT API, and UCM in parallel
+2. THE FPM_System SHALL map dispositions to UCM statuses: approve → approved, reject → rejected, customer_engagement → pending_customer_contact, cannot_determine → escalated
+3. THE Orchestrator_Agent SHALL add a pipeline completion comment to the case noting which downstream systems were updated
+
+### Requirement 16: AWS Infrastructure and Deployment
+
+**User Story:** As a DevOps engineer, I want the platform deployed on AWS using Infrastructure as Code, so that environments are reproducible, secure, and scalable.
+
+#### Acceptance Criteria
+
+1. THE FPM_System SHALL define all AWS infrastructure in a CloudFormation template supporting dev, staging, and prod environments
+2. THE FPM_System SHALL deploy the React frontend to an S3 bucket served via CloudFront with HTTPS enforcement, HTTP/2+3, and SPA fallback routing
+3. THE FPM_System SHALL deploy the FastAPI backend as an AWS Lambda function (Python 3.13, 512MB, 30s timeout) behind API Gateway v2 HTTP API using the Mangum ASGI adapter
+4. THE FPM_System SHALL secure the S3 bucket with public access blocked, AES256 encryption, versioning enabled, and CloudFront Origin Access Control
+5. THE FPM_System SHALL store secrets (OpenAI API key, Redshift credentials) in AWS Systems Manager Parameter Store
+6. THE FPM_System SHALL grant the Lambda execution role access to Redshift data API operations (ExecuteStatement, GetStatementResult, DescribeStatement)
+7. THE FPM_System SHALL provide a deployment script that builds the frontend, packages the backend, uploads artifacts to S3, deploys the CloudFormation stack, syncs frontend files, and invalidates the CloudFront cache
+8. WHERE a custom domain is configured, THE FPM_System SHALL support custom domain aliases with ACM certificate integration on CloudFront
+
+### Requirement 17: Graceful Degradation and Fallbacks
+
+**User Story:** As a fraud investigator, I want the system to remain functional even when the LLM or external services are unavailable, so that I can continue investigating cases without interruption.
+
+#### Acceptance Criteria
+
+1. IF the OpenAI API is unavailable, THEN THE Summarization_Agent SHALL generate a rule-based summary from collected data fields
+2. IF the OpenAI API is unavailable, THEN THE Decision_Agent SHALL produce a rule-based disposition recommendation based on risk score thresholds
