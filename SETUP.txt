@@ -1,0 +1,219 @@
+================================================================================
+  FPM FRONTEND - PROJECT SETUP GUIDE
+  Fraud Prevention & Case Management Platform
+================================================================================
+
+PREREQUISITES
+--------------------------------------------------------------------------------
+1. Node.js >= 16.x (recommended: 18.x LTS or 20.x LTS)
+   Download: https://nodejs.org/
+   Verify: node --version
+
+2. npm >= 8.x (comes with Node.js)
+   Verify: npm --version
+
+3. Git (optional, for version control)
+   Download: https://git-scm.com/
+
+================================================================================
+
+PROJECT STRUCTURE
+--------------------------------------------------------------------------------
+frontend/
+├── package.json          # Dependencies and scripts
+├── package-lock.json     # Locked dependency versions
+├── public/               # Static assets (index.html, favicon)
+├── build/                # Production build output (generated)
+├── src/
+│   ├── index.js          # React entry point
+│   ├── App.js            # Root component with routing and providers
+│   ├── components/       # Reusable UI components
+│   │   ├── CaseDetail.js       # Multi-tab case investigation view
+│   │   ├── CaseQueue.js        # Case list with quick filters
+│   │   ├── FilterBar.js        # Search, filter, sort, and export controls
+│   │   ├── Header.js           # Navigation header with role-based links
+│   │   └── KPICard.js          # Dashboard KPI card component
+│   ├── contexts/         # React Context providers
+│   │   ├── AuthContext.js       # Authentication and role management
+│   │   ├── CasesContext.js      # Case state, filters, CRUD operations
+│   │   ├── SystemHealthContext.js # AI service health state
+│   │   └── ThemeContext.js      # Dark/Light mode toggle
+│   ├── data/
+│   │   └── dummyData.js         # Mock data (cases, orders, users, etc.)
+│   ├── pages/            # Route-level page components
+│   │   ├── LoginPage.js         # Spectrum-branded login
+│   │   ├── DashboardPage.js     # KPIs, charts, activity feed
+│   │   ├── CasesPage.js         # Case queue + detail + create modal
+│   │   ├── DataSpiderPage.js    # Order aggregation view
+│   │   ├── FraudMapPage.js      # Heatmap + fraud ring detection
+│   │   ├── NLPQueryPage.js      # NLP-to-SQL query interface
+│   │   ├── SLAMonitorPage.js    # SLA thresholds and breached cases
+│   │   └── AuditLogPage.js      # Audit trail with export
+│   └── styles/
+│       └── App.css              # All application styles (dark/light)
+└── SETUP.txt             # This file
+
+================================================================================
+
+INSTALLATION
+--------------------------------------------------------------------------------
+Step 1: Open terminal and navigate to the frontend directory
+
+   cd frontend
+
+Step 2: Install dependencies
+
+   npm install
+
+   This installs:
+   - react 18.2.0          (UI framework)
+   - react-dom 18.2.0      (DOM rendering)
+   - react-router-dom 6.20 (Client-side routing)
+   - react-scripts 5.0.1   (CRA build toolchain - Webpack, Babel, ESLint)
+   - recharts 2.10.0       (Chart components)
+
+Step 3: Verify installation
+
+   node_modules/ folder should be created with all packages
+
+================================================================================
+
+RUNNING THE APPLICATION
+--------------------------------------------------------------------------------
+Development mode (with hot reload):
+
+   npm start
+   OR
+   npm run dev
+
+   -> Opens at http://localhost:3000
+   -> If port 3000 is occupied, it will prompt to use another port (e.g., 3001)
+   -> Auto-reloads on file changes
+
+Production build:
+
+   npm run build
+
+   -> Creates optimized build in /build folder
+   -> Ready for deployment to S3/CloudFront
+
+================================================================================
+
+LOGIN CREDENTIALS (Demo)
+--------------------------------------------------------------------------------
+Role: Investigator
+   Username: john.doe      Password: password123
+   Username: jane.smith    Password: password123
+
+Role: Supervisor
+   Username: mike.wilson   Password: password123
+   Username: admin         Password: admin
+
+================================================================================
+
+FEATURES IMPLEMENTED (Per Requirements)
+--------------------------------------------------------------------------------
+Req 1:  Multi-Agent Pipeline - AI Insights display (Triage, Verification,
+        Summarization, Decision agents) with risk scores and recommendations
+
+Req 2:  Guardrails - Confidence Gate indicator, Prompt Shield validation in
+        NLP Query, PII badge indicators, Audit Trail recording
+
+Req 3:  Case Management - Full lifecycle (9 statuses), dispositions (10 types),
+        comments, escalation with reason, reassignment, manual case creation,
+        downstream pipeline push with UCM mapping
+
+Req 4:  Search/Filter/Export - Search by 9 fields (incl. mobile account),
+        filter by status/priority/type/investigator/date, sort asc/desc,
+        CSV export with all required fields
+
+Req 5:  SLA Monitoring - Dedicated page with thresholds, breached/at-risk
+        case lists, priority tier display
+
+Req 6:  NLP-to-SQL - Natural language input, Prompt Shield, target selector
+        (Redshift/SQLite), quick query templates, LLM fallback indicator,
+        date filter enforcement badge, results with export
+
+Req 7:  Feedback Tracking - AI Feedback Metrics panel on Dashboard (supervisor),
+        accuracy by risk band, override patterns, threshold recommendations
+
+Req 9:  Fraud Map - US heatmap (state grid), state tooltips with ZIP data,
+        ranking panel, fraud ring network graph with colored links
+
+Req 10: Dashboard - 4 navigation views, KPI cards (clickable), case queue with
+        quick filters, multi-tab case detail (9 tabs incl. Redshift Chat),
+        Data Spider with pagination
+
+Req 11: Auth & RBAC - Login page, investigator/supervisor roles, role-based
+        case visibility, header with name/role/logout
+
+Req 12: Investigation Scoring - 18 risk factors with weights, percentage
+        calculation, 12 external tool links
+
+Req 13: Customer History - Cross-case lookup by name/email/phone/account,
+        summary metrics (total, open, last date, high-risk flag)
+
+Req 14: Linked Tickets - Bidirectional linking, link creation UI
+
+Req 15: Downstream Pipeline - Pipeline status display after disposition,
+        UCM status mapping (approve->approved, etc.), completion comment
+
+Req 17: Graceful Degradation - System health toggle (supervisor), AI
+        degradation banner, LLM fallback mode indicator
+
+================================================================================
+
+ENVIRONMENT CONFIGURATION
+--------------------------------------------------------------------------------
+No .env file is required for the frontend demo (all data is mocked).
+
+For production deployment (Req 16), the frontend is deployed to:
+- AWS S3 bucket (static hosting)
+- Served via CloudFront (HTTPS, HTTP/2+3, SPA fallback)
+- API calls point to API Gateway endpoint
+
+To configure API base URL for production:
+   Create .env file in frontend/:
+   REACT_APP_API_URL=https://your-api-gateway-url.amazonaws.com
+
+================================================================================
+
+THEME SYSTEM
+--------------------------------------------------------------------------------
+- Default: Dark mode (glassmorphism theme)
+- Toggle: Light/Dark via button in header
+- Persistence: localStorage key "fpm-theme"
+- Implementation: data-theme attribute on <html> element
+
+================================================================================
+
+BROWSER SUPPORT
+--------------------------------------------------------------------------------
+- Chrome (last version)
+- Firefox (last version)
+- Safari (last version)
+- Edge (last version)
+
+================================================================================
+
+COMMON ISSUES & TROUBLESHOOTING
+--------------------------------------------------------------------------------
+1. "react-scripts is not recognized"
+   -> Run: npm install
+   -> Or: npx react-scripts start
+
+2. Port 3000 already in use
+   -> Press Y when prompted to use alternate port
+   -> Or set: $env:PORT=3001; npm start (PowerShell)
+
+3. PowerShell execution policy error
+   -> Run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+4. Module not found errors
+   -> Delete node_modules/ and package-lock.json
+   -> Run: npm install
+
+5. Blank page after build
+   -> Add "homepage": "." to package.json for relative paths
+
+================================================================================
